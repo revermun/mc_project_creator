@@ -8,6 +8,8 @@
 #include <QFile>
 #include <QSettings>
 #include <QProcess>
+#include <QCoreApplication>
+#include "repoBuilder.h"
 
 QT_BEGIN_NAMESPACE
 namespace Ui { class MainWindow; }
@@ -27,7 +29,7 @@ public slots:
     void editPath();
 
 private:
-    QList<QCheckBox*> radioList;
+    QList<QRadioButton*> radioList;
     Ui::MainWindow *ui;
 };
 #endif // MAINWINDOW_H
