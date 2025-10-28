@@ -52,6 +52,9 @@
     </item>
     <item row="3" column="3">
      <widget class="QPushButton" name="pushButtonCreate">
+      <property name="enabled">
+       <bool>false</bool>
+      </property>
       <property name="text">
        <string>Создать</string>
       </property>
@@ -68,19 +71,6 @@
      <widget class="QLabel" name="label">
       <property name="text">
        <string>Путь</string>
-      </property>
-     </widget>
-    </item>
-    <item row="2" column="3">
-     <widget class="QTextEdit" name="logTextEdit">
-      <property name="sizePolicy">
-       <sizepolicy hsizetype="Maximum" vsizetype="Expanding">
-        <horstretch>0</horstretch>
-        <verstretch>0</verstretch>
-       </sizepolicy>
-      </property>
-      <property name="readOnly">
-       <bool>true</bool>
       </property>
      </widget>
     </item>
@@ -132,9 +122,27 @@
     </hint>
    </hints>
   </connection>
+  <connection>
+   <sender>lineEditProjectName</sender>
+   <signal>textChanged(QString)</signal>
+   <receiver>MainWindow</receiver>
+   <slot>checkCyrillic()</slot>
+   <hints>
+    <hint type="sourcelabel">
+     <x>158</x>
+     <y>70</y>
+    </hint>
+    <hint type="destinationlabel">
+     <x>62</x>
+     <y>94</y>
+    </hint>
+   </hints>
+  </connection>
  </connections>
  <slots>
+  <signal>cyrillicPathWarning()</signal>
   <slot>editPath()</slot>
   <slot>createProject()</slot>
+  <slot>checkCyrillic()</slot>
  </slots>
 </ui>

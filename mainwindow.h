@@ -25,10 +25,12 @@ public:
 
 
 public slots:
+    void checkCyrillic();
     void createProject();
     void editPath();
 
 private:
+    bool isCyrillic(wchar_t wch);
     QList<QRadioButton*> radioList;
     Ui::MainWindow *ui;
 };

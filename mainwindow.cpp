@@ -1,8 +1,14 @@
 #include "mainwindow.h"
 #include "ui_mainwindow.h"
+#include "LoggingCategories.h"
 
 ///TODO: Добавить логирование при создании https://evileg.com/ru/post/154/
-///TODO: Добавить индикацию неправильной дериктории(заблокировать кнопку создания или как-то уведомить о наличии кирилицы)
+bool MainWindow::isCyrillic(wchar_t wch)
+{
+    int code = (int)wch;
+    return (code >= 0x400 && code <= 0x4ff);
+}
+
 
 MainWindow::MainWindow(QWidget *parent)
     : QMainWindow(parent)
@@ -23,6 +29,7 @@ MainWindow::MainWindow(QWidget *parent)
     while(set.value("microcontrollers/mc"+QString::number(index),QString("empty string")).toString()!="empty string"){
         QRadioButton* radio = new QRadioButton();
         radio->setText(set.value("microcontrollers/mc"+QString::number(index),QString("empty string")).toString());
+        if(index == 1) radio->setChecked(true);
         radioList.append(radio);
         index++;
     }
@@ -48,8 +55,23 @@ void MainWindow::editPath()
                                                     QFileDialog::ShowDirsOnly
                                                     | QFileDialog::DontResolveSymlinks);
     if (dir == "") {return;}
-    ui->lineEditPath->setText(dir);
 
+    bool isContainCyrillic = false;
+    for(QChar ch: dir){
+        if (isCyrillic(ch.unicode())) isContainCyrillic = true;
+    }
+    if (!isContainCyrillic) {ui->pushButtonCreate->setEnabled(true); ui->lineEditPath->setText(dir);}
+    else {ui->pushButtonCreate->setEnabled(false); ui->lineEditPath->setText("Обнаружена кирилица! Измените путь для проекта");}
+}
+
+void MainWindow::checkCyrillic(){
+    bool isContainCyrillic = false;
+    QString name = ui->lineEditProjectName->text();
+    for(QChar ch: name){
+        if (isCyrillic(ch.unicode())) isContainCyrillic = true;
+    }
+    if (!isContainCyrillic) ui->pushButtonCreate->setEnabled(true);
+    else ui->pushButtonCreate->setEnabled(false);
 }
 
 /// Из гита клонить HAL, BSP, FREETROS
@@ -57,7 +79,6 @@ void MainWindow::editPath()
 /// Директории: FREERTOS - src/FreeRTOS; HAL - src/hal; BSP - src/bsp
 void MainWindow::createProject()
 {
-    ui->logTextEdit->clear();
     if (ui->lineEditPath->text() == "") return;
     int index = 1;
     for(int i = 0; i<ui->verticalLayout->count(); i++){
@@ -72,8 +93,7 @@ void MainWindow::createProject()
     QString directory;
     if (repoName!="") directory = QDir::fromNativeSeparators(ui->lineEditPath->text()) + '/' + repoName;
     else directory = QDir::fromNativeSeparators(ui->lineEditPath->text());
-    ui->logTextEdit->append("Создание проекта " + repoName + " в директории " + directory + "...");
-    QApplication::processEvents();
+    qDebug(logInfo()) << "Создание проекта " + repoName + " в директории " + directory + "...";
     repoBuilder rB = repoBuilder(directory);
     QSettings set(QCoreApplication::applicationDirPath()+"/config.ini",QSettings::IniFormat);
     QString HALUrl = set.value("HAL/mc"+QString::number(index),QString("empty string")).toString();
@@ -82,26 +102,28 @@ void MainWindow::createProject()
     QString HALDirectory = directory + '/' + "src/hal";
     QString BSPDirectory = directory + '/' + "src/bsp";
     QString freeRTOSDirectory = directory + '/' + "src/FreeRTOS";
-    ui->logTextEdit->append("Клонирование hal в директорию" + HALDirectory + "...");
-    QApplication::processEvents();
+    qDebug(logInfo()) << "Клонирование hal в директорию " + HALDirectory + "...";
     if (!rB.cloneRepo(HALUrl, HALDirectory)){
-           ui->logTextEdit->append("Ошибка при клонировании hal!");
-           QApplication::processEvents();
+           qDebug(logWarning()) << "Ошибка при клонировании hal!";
     }
-    ui->logTextEdit->append("Клонирование bsp в директорию" + BSPDirectory + "...");
+    else qDebug(logInfo()) << "hal успешно склонированно";
+
+    qDebug(logInfo()) << "Клонирование bsp в директорию " + BSPDirectory + "...";
     if(!rB.cloneRepo(BSPUrl, BSPDirectory)){
-        ui->logTextEdit->append("Ошибка при клонировании bsp!");
-        QApplication::processEvents();
+        qDebug(logWarning()) << "Ошибка при клонировании bsp!";
     }
-    ui->logTextEdit->append("Клонирование bsp в директорию" + BSPDirectory + "...");
+    else qDebug(logInfo()) << "bsp успешно склонированно";
+
+    qDebug(logInfo()) << "Клонирование freeRTOS в директорию " + freeRTOSDirectory + "...";
     if(!rB.cloneFREERTOS(freeRTOSURL,freeRTOSDirectory,
                      "portable/GCC/" + set.value("architecture/mc" + QString::number(index),QString("empty string")).toString())){
-        ui->logTextEdit->append("Ошибка при клонировании freeRTOS!");
-        QApplication::processEvents();
+        qDebug(logWarning()) << "Ошибка при клонировании freeRTOS!";
     }
-    ui->logTextEdit->append("Создание файлов и папок...");
-    QApplication::processEvents();
+    else qDebug(logInfo()) << "freeRTOS успешно склонированно";
+
+    qDebug(logInfo()) << "Создание файлов и папок...";
     rB.buildRepo();
+    qDebug(logInfo()) << "Папки и файлы созданы";
 }
 
 
