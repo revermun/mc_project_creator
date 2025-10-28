@@ -66,52 +66,60 @@ bool repoBuilder::buildRepo()
     if(!makePath(devicePath)) res = false;
     if(!makePath(driverPath)) res = false;
 
-    QString gitignorePath = defaultPath + '/' + ".gitignore";
-    QString armgccPath = defaultPath + '/' + "arm-none-eabi-gcc.cmake";
-    QString cmakelistPath = defaultPath + '/' + "CMakeLists.txt";
-    QString readmePath = defaultPath +  '/' + "README.md";
-    QString confboardPath = srcPath + '/' + "configure_board.h";
-    QString definesappPath = srcPath + '/' + "defines_app.h";
-    QString freeRTOSconfPath = srcPath + '/' + "FreeRTOSConfig.h";
-    QString maincPath = srcPath + '/' + "main.c";
-    QString mainhPath = srcPath + '/' + "main.h";
-    QString targetcmakePath = srcPath +'/' + "target.cmake";
+//    QString gitignorePath = defaultPath + '/' + ".gitignore";
+//    QString armgccPath = defaultPath + '/' + "arm-none-eabi-gcc.cmake";
+//    QString cmakelistPath = defaultPath + '/' + "CMakeLists.txt";
+//    QString readmePath = defaultPath +  '/' + "README.md";
+//    QString confboardPath = srcPath + '/' + "configure_board.h";
+//    QString definesappPath = srcPath + '/' + "defines_app.h";
+//    QString freeRTOSconfPath = srcPath + '/' + "FreeRTOSConfig.h";
+//    QString maincPath = srcPath + '/' + "main.c";
+//    QString mainhPath = srcPath + '/' + "main.h";
+//    QString targetcmakePath = srcPath +'/' + "target.cmake";
 
-    if(!makeFile(readmePath)) res = false;
-    if(!makeFile(gitignorePath)) res = false;
-    if(!makeFile(armgccPath)) res = false;
-    if(!makeFile(cmakelistPath)) res = false;
-    if(!makeFile(confboardPath)) res = false;
-    if(!makeFile(definesappPath)) res = false;
-    if(!makeFile(freeRTOSconfPath)) res = false;
-    if(!makeFile(maincPath)) res = false;
-    if(!makeFile(mainhPath)) res = false;
-    if(!makeFile(targetcmakePath)) res = false;
+//    if(!makeFile(readmePath)) res = false;
+//    if(!makeFile(gitignorePath)) res = false;
+//    if(!makeFile(armgccPath)) res = false;
+//    if(!makeFile(cmakelistPath)) res = false;
+//    if(!makeFile(confboardPath)) res = false;
+//    if(!makeFile(definesappPath)) res = false;
+//    if(!makeFile(freeRTOSconfPath)) res = false;
+//    if(!makeFile(maincPath)) res = false;
+//    if(!makeFile(mainhPath)) res = false;
+//    if(!makeFile(targetcmakePath)) res = false;
 
     return res;
 }
 
 bool repoBuilder::cloneRepo(const QString &repoUrl, const QString &path, const QString &repoSubdirectory)
 {
+    bool res;
     makePath(path);
+    QString tmpPath = path + "/tmp";
+    makePath(tmpPath);
     QProcess process;
-    process.start("git", {"clone", "--filter=blob:none", repoUrl, path});
+    process.start("git", {"clone", "--filter=blob:none", repoUrl, tmpPath});
     process.waitForFinished();
     if (!(process.exitStatus() == QProcess::NormalExit && process.exitCode() == 0)) {
         return false;
     }
     if(repoSubdirectory!=""){
-        process.setWorkingDirectory(path);
+        process.setWorkingDirectory(tmpPath);
         process.start("git", {"sparse-checkout", "init"});
         process.waitForFinished();
         process.start("git", {"sparse-checkout", "set", repoSubdirectory});
         process.waitForFinished();
+        if (!(process.exitStatus() == QProcess::NormalExit && process.exitCode() == 0)) {
+            return false;
+        }
+        else return true;
     }
-    deleteDir(path + "/.git");
-    if (!(process.exitStatus() == QProcess::NormalExit && process.exitCode() == 0)) {
-        return false;
-    }
-    else return true;
+    if (!deleteDir(tmpPath + "/.git")) res = false;
+    QDir().remove(tmpPath + "/README.md");
+    if (!copyDir(tmpPath,path, true)) res = false;
+    deleteDir(tmpPath);
+    return res;
+
 }
 
 bool repoBuilder::copyDir(const QString &source, const QString &destination, bool override)
@@ -160,7 +168,7 @@ bool repoBuilder::copyDir(const QString &source, const QString &destination, boo
     return !error;
 }
 
-bool repoBuilder::deleteDir(const QString &dirName)
+bool repoBuilder::deleteDir(const QString &dirName, bool isDeleteOnlyContents)
 {
     QDir directory(dirName);
     if (!directory.exists())
@@ -183,7 +191,7 @@ bool repoBuilder::deleteDir(const QString &dirName)
             QFile::setPermissions(filePath, QFile::WriteOwner);
             if (!QFile::remove(filePath))
             {
-                qDebug() << "remove file" << filePath << " faild!";
+                qDebug() << "remove file" << filePath << " failed!";
                 error = true;
             }
         }
@@ -195,13 +203,13 @@ bool repoBuilder::deleteDir(const QString &dirName)
             }
         }
     }
-
-    if (!directory.rmdir(QDir::toNativeSeparators(directory.path())))
-    {
-        qDebug() << "remove dir" << directory.path() << " faild!";
-        error = true;
+    if (!isDeleteOnlyContents){
+        if (!directory.rmdir(QDir::toNativeSeparators(directory.path())))
+        {
+            qDebug() << "remove dir" << directory.path() << " faild!";
+            error = true;
+        }
     }
-
     return !error;
 }
 
@@ -210,14 +218,6 @@ bool repoBuilder::cloneFREERTOS(const QString &repoUrl, const QString &path, con
     bool res = true;
     if (!cloneRepo(repoUrl, path)) res = false;
     if (!copyDir(path + '/' + repoSubdirectory,path + "/include", true)) res = false;
-    QProcess process;
-    process.setWorkingDirectory(path);
-    process.start("git", {"sparse-checkout", "init"});
-    process.waitForFinished();
-    process.start("git", {"sparse-checkout", "set", "include"});
-    process.waitForFinished();
-    if (!(process.exitStatus() == QProcess::NormalExit && process.exitCode() == 0)) {
-        res = false;
-    }
+    if (!deleteDir(path + "/portable")) res = false;
     return res;
 }

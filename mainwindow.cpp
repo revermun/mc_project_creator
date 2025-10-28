@@ -8,7 +8,8 @@ bool MainWindow::isCyrillic(wchar_t wch)
     return (code >= 0x400 && code <= 0x4ff);
 }
 
-
+///TODO: Изменить алгоритм клонирования: заместо прямого клонирования в целевые папки,
+/// клонировать в временную директорию -> обработать содержимое(удаление .git и README.md) -> копировать её содержимое в целевую папку
 MainWindow::MainWindow(QWidget *parent)
     : QMainWindow(parent)
     , ui(new Ui::MainWindow)
@@ -24,6 +25,8 @@ MainWindow::MainWindow(QWidget *parent)
     set.setValue("BSP/mc1",QString("https://gitlab.borisblade.ru/common1/arm-firmware-sources/bsp-templates/stm32h745.git"));
     set.setValue("BSP/mc2",QString("https://gitlab.borisblade.ru/common1/arm-firmware-sources/bsp-templates/mdr1986ve9x.git"));
     set.setValue("freeRTOS/url",QString("https://gitlab.borisblade.ru/common1/arm-firmware-sources/freertos.git"));
+    set.setValue("vscode/url",QString("https://gitlab.borisblade.ru/common1/arm-firmware-sources/vs-code-template.git"));
+    set.setValue("src/url",QString("https://gitlab.borisblade.ru/common1/arm-firmware-sources/src.git"));
     int index = 1;
     while(set.value("microcontrollers/mc"+QString::number(index),QString("empty string")).toString()!="empty string"){
         QRadioButton* radio = new QRadioButton();
@@ -97,10 +100,27 @@ void MainWindow::createProject()
     QSettings set(QCoreApplication::applicationDirPath()+"/config.ini",QSettings::IniFormat);
     QString HALUrl = set.value("HAL/mc"+QString::number(index),QString("empty string")).toString();
     QString BSPUrl = set.value("BSP/mc"+QString::number(index),QString("empty string")).toString();
-    QString freeRTOSURL = set.value("freeRTOS/url",QString("empty string")).toString();
+    QString freeRTOSUrl = set.value("freeRTOS/url",QString("empty string")).toString();
+    QString vscodeUrl = set.value("vscode/url",QString("empty string")).toString();
+    QString srcUrl = set.value("src/url",QString("empty string")).toString();
     QString HALDirectory = directory + '/' + "src/hal";
     QString BSPDirectory = directory + '/' + "src/bsp";
     QString freeRTOSDirectory = directory + '/' + "src/FreeRTOS";
+    QString vscodeDirectory = directory;
+    QString srcDirectory = directory + '/' + "src/";
+
+    qDebug(logInfo()) << "Клонирование .vscode в директорию " + vscodeDirectory + "...";
+    if(!rB.cloneRepo(vscodeUrl, vscodeDirectory)){
+        qDebug(logWarning()) << "Ошибка при клонировании .vscode!";
+    }
+    else qDebug(logInfo()) << ".vscode успешно склонированно";
+
+    qDebug(logInfo()) << "Клонирование src в директорию " + srcDirectory + "...";
+    if(!rB.cloneRepo(srcUrl, srcDirectory)){
+        qDebug(logWarning()) << "Ошибка при клонировании src!";
+    }
+    else qDebug(logInfo()) << "src успешно склонированно";
+
     qDebug(logInfo()) << "Клонирование hal в директорию " + HALDirectory + "...";
     if (!rB.cloneRepo(HALUrl, HALDirectory)){
            qDebug(logWarning()) << "Ошибка при клонировании hal!";
@@ -114,7 +134,7 @@ void MainWindow::createProject()
     else qDebug(logInfo()) << "bsp успешно склонированно";
 
     qDebug(logInfo()) << "Клонирование freeRTOS в директорию " + freeRTOSDirectory + "...";
-    if(!rB.cloneFREERTOS(freeRTOSURL,freeRTOSDirectory,
+    if(!rB.cloneFREERTOS(freeRTOSUrl,freeRTOSDirectory,
                      "portable/GCC/" + set.value("architecture/mc" + QString::number(index),QString("empty string")).toString())){
         qDebug(logWarning()) << "Ошибка при клонировании freeRTOS!";
     }
