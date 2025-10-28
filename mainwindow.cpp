@@ -76,6 +76,23 @@ void MainWindow::checkCyrillic(){
     else ui->pushButtonCreate->setEnabled(false);
 }
 
+void cloneFiles(const QString &repoUrl, const QString &directory, const QString &filesName)
+{
+    repoBuilder rB = repoBuilder();
+    qDebug(logInfo()) << "Клонирование" << filesName << "в директорию" << directory << "...";
+    int cloneRes = rB.cloneRepo(repoUrl, directory);
+    if( cloneRes != 0){
+        qDebug(logWarning()) << "Ошибка при клонировании" << filesName << "!";
+        switch(cloneRes){
+            case 1: qDebug(logWarning()) << "Не удалось склонировать дирректорию";
+            case 2: qDebug(logWarning()) << "Не удалось произвести sparce-checkout";
+            case 3: qDebug(logWarning()) << "Не удалось удалить удалить .git";
+            case 4: qDebug(logWarning()) << "Не удалось скопировать файлы";
+        }
+    }
+    else qDebug(logInfo()) << filesName << "успешно склонированно";
+}
+
 /// Из гита клонить HAL, BSP, FREETROS
 /// HAL и BSP определяются по модели МК(microcontrollers в конфиге), FREERTOS архитектурой ядра(architecture в конфиге)
 /// Директории: FREERTOS - src/FreeRTOS; HAL - src/hal; BSP - src/bsp
@@ -95,7 +112,7 @@ void MainWindow::createProject()
     QString directory;
     if (repoName!="") directory = QDir::fromNativeSeparators(ui->lineEditPath->text()) + '/' + repoName;
     else directory = QDir::fromNativeSeparators(ui->lineEditPath->text());
-    qDebug(logInfo()) << "Создание проекта " + repoName + " в директории " + directory + "...";
+    qDebug(logInfo()) << "Создание проекта" << repoName << "в директории" << directory << "...";
     repoBuilder rB = repoBuilder(directory);
     QSettings set(QCoreApplication::applicationDirPath()+"/config.ini",QSettings::IniFormat);
     QString HALUrl = set.value("HAL/mc"+QString::number(index),QString("empty string")).toString();
@@ -109,31 +126,36 @@ void MainWindow::createProject()
     QString vscodeDirectory = directory;
     QString srcDirectory = directory + '/' + "src/";
 
-    qDebug(logInfo()) << "Клонирование .vscode в директорию " + vscodeDirectory + "...";
-    if(!rB.cloneRepo(vscodeUrl, vscodeDirectory)){
-        qDebug(logWarning()) << "Ошибка при клонировании .vscode!";
-    }
-    else qDebug(logInfo()) << ".vscode успешно склонированно";
+    cloneFiles(HALUrl, HALDirectory, "HAL");
+    cloneFiles(BSPUrl, BSPDirectory, "BSP");
+    cloneFiles(vscodeUrl, vscodeDirectory, ".vscode");
+    cloneFiles(srcUrl, srcDirectory, "src");
 
-    qDebug(logInfo()) << "Клонирование src в директорию " + srcDirectory + "...";
-    if(!rB.cloneRepo(srcUrl, srcDirectory)){
-        qDebug(logWarning()) << "Ошибка при клонировании src!";
-    }
-    else qDebug(logInfo()) << "src успешно склонированно";
+//    qDebug(logInfo()) << "Клонирование .vscode в директорию " + vscodeDirectory + "...";
+//    if(!rB.cloneRepo(vscodeUrl, vscodeDirectory)){
+//        qDebug(logWarning()) << "Ошибка при клонировании .vscode!";
+//    }
+//    else qDebug(logInfo()) << ".vscode успешно склонированно";
 
-    qDebug(logInfo()) << "Клонирование hal в директорию " + HALDirectory + "...";
-    if (!rB.cloneRepo(HALUrl, HALDirectory)){
-           qDebug(logWarning()) << "Ошибка при клонировании hal!";
-    }
-    else qDebug(logInfo()) << "hal успешно склонированно";
+//    qDebug(logInfo()) << "Клонирование src в директорию " + srcDirectory + "...";
+//    if(!rB.cloneRepo(srcUrl, srcDirectory)){
+//        qDebug(logWarning()) << "Ошибка при клонировании src!";
+//    }
+//    else qDebug(logInfo()) << "src успешно склонированно";
 
-    qDebug(logInfo()) << "Клонирование bsp в директорию " + BSPDirectory + "...";
-    if(!rB.cloneRepo(BSPUrl, BSPDirectory)){
-        qDebug(logWarning()) << "Ошибка при клонировании bsp!";
-    }
-    else qDebug(logInfo()) << "bsp успешно склонированно";
+//    qDebug(logInfo()) << "Клонирование hal в директорию " + HALDirectory + "...";
+//    if (!rB.cloneRepo(HALUrl, HALDirectory)){
+//           qDebug(logWarning()) << "Ошибка при клонировании hal!";
+//    }
+//    else qDebug(logInfo()) << "hal успешно склонированно";
 
-    qDebug(logInfo()) << "Клонирование freeRTOS в директорию " + freeRTOSDirectory + "...";
+//    qDebug(logInfo()) << "Клонирование bsp в директорию " + BSPDirectory + "...";
+//    if(!rB.cloneRepo(BSPUrl, BSPDirectory)){
+//        qDebug(logWarning()) << "Ошибка при клонировании bsp!";
+//    }
+//    else qDebug(logInfo()) << "bsp успешно склонированно";
+
+    qDebug(logInfo()) << "Клонирование freeRTOS в директорию" << freeRTOSDirectory << "...";
     if(!rB.cloneFREERTOS(freeRTOSUrl,freeRTOSDirectory,
                      "portable/GCC/" + set.value("architecture/mc" + QString::number(index),QString("empty string")).toString())){
         qDebug(logWarning()) << "Ошибка при клонировании freeRTOS!";

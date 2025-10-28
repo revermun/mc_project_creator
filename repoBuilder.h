@@ -10,10 +10,11 @@
 class repoBuilder{
 public:
     repoBuilder(const QString &directory);
+    repoBuilder();
     ~repoBuilder();
 
     bool buildRepo();
-    bool cloneRepo(const QString &repoUrl, const QString &path, const QString &repoSubdirectory = "");
+    int cloneRepo(const QString &repoUrl, const QString &path, const QString &repoSubdirectory = "");
     bool cloneFREERTOS(const QString &repoUrl, const QString &path, const QString &repoSubdirectory);
     bool copyDir(const QString &source, const QString &destination, bool override);
     bool deleteDir(const QString &dirName, bool isDeleteOnlyContents = false);
