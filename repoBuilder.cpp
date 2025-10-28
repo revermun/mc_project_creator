@@ -107,6 +107,7 @@ bool repoBuilder::cloneRepo(const QString &repoUrl, const QString &path, const Q
         process.start("git", {"sparse-checkout", "set", repoSubdirectory});
         process.waitForFinished();
     }
+    deleteDir(path + "/.git");
     if (!(process.exitStatus() == QProcess::NormalExit && process.exitCode() == 0)) {
         return false;
     }
@@ -159,6 +160,50 @@ bool repoBuilder::copyDir(const QString &source, const QString &destination, boo
     return !error;
 }
 
+bool repoBuilder::deleteDir(const QString &dirName)
+{
+    QDir directory(dirName);
+    if (!directory.exists())
+    {
+        return true;
+    }
+
+    QString srcPath = QDir::toNativeSeparators(dirName);
+    if (!srcPath.endsWith(QDir::separator()))
+        srcPath += QDir::separator();
+
+    QStringList fileNames = directory.entryList(QDir::AllEntries | QDir::NoDotAndDotDot | QDir::Hidden);
+    bool error = false;
+    for (QStringList::size_type i=0; i != fileNames.size(); ++i)
+    {
+        QString filePath = srcPath + fileNames.at(i);
+        QFileInfo fileInfo(filePath);
+        if (fileInfo.isFile() || fileInfo.isSymLink())
+        {
+            QFile::setPermissions(filePath, QFile::WriteOwner);
+            if (!QFile::remove(filePath))
+            {
+                qDebug() << "remove file" << filePath << " faild!";
+                error = true;
+            }
+        }
+        else if (fileInfo.isDir())
+        {
+            if (!deleteDir(filePath))
+            {
+                error = true;
+            }
+        }
+    }
+
+    if (!directory.rmdir(QDir::toNativeSeparators(directory.path())))
+    {
+        qDebug() << "remove dir" << directory.path() << " faild!";
+        error = true;
+    }
+
+    return !error;
+}
 
 bool repoBuilder::cloneFREERTOS(const QString &repoUrl, const QString &path, const QString &repoSubdirectory)
 {

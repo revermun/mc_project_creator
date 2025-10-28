@@ -2,7 +2,6 @@
 #include "ui_mainwindow.h"
 #include "LoggingCategories.h"
 
-///TODO: Добавить логирование при создании https://evileg.com/ru/post/154/
 bool MainWindow::isCyrillic(wchar_t wch)
 {
     int code = (int)wch;

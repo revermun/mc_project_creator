@@ -16,6 +16,7 @@ public:
     bool cloneRepo(const QString &repoUrl, const QString &path, const QString &repoSubdirectory = "");
     bool cloneFREERTOS(const QString &repoUrl, const QString &path, const QString &repoSubdirectory);
     bool copyDir(const QString &source, const QString &destination, bool override);
+    bool deleteDir(const QString &dirName);
 private:
     bool makePath(const QString &path);
     bool makeFile(const QString &filePath);
