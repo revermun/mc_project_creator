@@ -8,13 +8,12 @@ bool MainWindow::isCyrillic(wchar_t wch)
     return (code >= 0x400 && code <= 0x4ff);
 }
 
-///TODO: Изменить алгоритм клонирования: заместо прямого клонирования в целевые папки,
-/// клонировать в временную директорию -> обработать содержимое(удаление .git и README.md) -> копировать её содержимое в целевую папку
 MainWindow::MainWindow(QWidget *parent)
     : QMainWindow(parent)
     , ui(new Ui::MainWindow)
 {
     ui->setupUi(this);
+    statusBar()->showMessage(tr("Версия ПО: ") + this->version);
     QSettings set(QCoreApplication::applicationDirPath()+"/config.ini",QSettings::IniFormat);
     set.setValue("microcontrollers/mc1",QString("STM32H7"));
     set.setValue("microcontrollers/mc2",QString("1986E9x"));
@@ -76,21 +75,47 @@ void MainWindow::checkCyrillic(){
     else ui->pushButtonCreate->setEnabled(false);
 }
 
-void cloneFiles(const QString &repoUrl, const QString &directory, const QString &filesName)
+bool MainWindow::cloneFiles(const QString &repoUrl, const QString &directory, const QString &filesName)
 {
     repoBuilder rB = repoBuilder();
     qDebug(logInfo()) << "Клонирование" << filesName << "в директорию" << directory << "...";
+    ui->labelProgress->setText("Клонирование " + filesName + " в директорию " + directory + "...");
     int cloneRes = rB.cloneRepo(repoUrl, directory);
     if( cloneRes != 0){
         qDebug(logWarning()) << "Ошибка при клонировании" << filesName << "!";
+        ui->labelProgress->setText("Ошибка при клонировании " + filesName + "! Подробности в логе.");
         switch(cloneRes){
-            case 1: qDebug(logWarning()) << "Не удалось склонировать дирректорию";
-            case 2: qDebug(logWarning()) << "Не удалось произвести sparce-checkout";
-            case 3: qDebug(logWarning()) << "Не удалось удалить удалить .git";
-            case 4: qDebug(logWarning()) << "Не удалось скопировать файлы";
+        case 1: qDebug(logWarning()) << "Не удалось склонировать дирректорию"; break;
+        case 2: qDebug(logWarning()) << "Не удалось произвести sparce-checkout"; break;
+        case 3: qDebug(logWarning()) << "Не удалось удалить удалить .git"; break;
+        case 4: qDebug(logWarning()) << "Не удалось скопировать файлы"; break;
         }
+        return false;
     }
     else qDebug(logInfo()) << filesName << "успешно склонированно";
+    progress += 15;
+    ui->progressBar->setValue(progress);
+    ui->progressBar->update();
+    return true;
+}
+
+bool MainWindow::cloneFreeRTOS(const QString &repoUrl, const QString &directory, const QString &repoSubDirectory)
+{
+    repoBuilder rB = repoBuilder();
+    qDebug(logInfo()) << "Клонирование freeRTOS в директорию" << directory << "...";
+    ui->labelProgress->setText("Клонирование freeRTOS в директорию " + directory + "...");
+    if(!rB.cloneFREERTOS(repoUrl,
+                         directory,
+                         repoSubDirectory)){
+        qDebug(logWarning()) << "Ошибка при клонировании freeRTOS!";
+        ui->labelProgress->setText("Ошибка при клонировании freeRTOS!");
+        return false;
+    }
+    else qDebug(logInfo()) << "freeRTOS успешно склонированно";
+    progress += 15;
+    ui->progressBar->setValue(progress);
+    ui->progressBar->update();
+    return true;
 }
 
 /// Из гита клонить HAL, BSP, FREETROS
@@ -98,6 +123,10 @@ void cloneFiles(const QString &repoUrl, const QString &directory, const QString 
 /// Директории: FREERTOS - src/FreeRTOS; HAL - src/hal; BSP - src/bsp
 void MainWindow::createProject()
 {
+    progress = 0;
+    ui->progressBar->setValue(progress);
+    ui->labelProgress->setText("");
+
     if (ui->lineEditPath->text() == "") return;
     int index = 1;
     for(int i = 0; i<ui->verticalLayout->count(); i++){
@@ -126,45 +155,22 @@ void MainWindow::createProject()
     QString vscodeDirectory = directory;
     QString srcDirectory = directory + '/' + "src/";
 
-    cloneFiles(HALUrl, HALDirectory, "HAL");
-    cloneFiles(BSPUrl, BSPDirectory, "BSP");
-    cloneFiles(vscodeUrl, vscodeDirectory, ".vscode");
-    cloneFiles(srcUrl, srcDirectory, "src");
+    if (!cloneFiles(HALUrl, HALDirectory, "HAL")) return;
+    if (!cloneFiles(BSPUrl, BSPDirectory, "BSP")) return;
+    if (!cloneFiles(vscodeUrl, vscodeDirectory, ".vscode")) return;
+    if (!cloneFiles(srcUrl, srcDirectory, "src")) return;
 
-//    qDebug(logInfo()) << "Клонирование .vscode в директорию " + vscodeDirectory + "...";
-//    if(!rB.cloneRepo(vscodeUrl, vscodeDirectory)){
-//        qDebug(logWarning()) << "Ошибка при клонировании .vscode!";
-//    }
-//    else qDebug(logInfo()) << ".vscode успешно склонированно";
-
-//    qDebug(logInfo()) << "Клонирование src в директорию " + srcDirectory + "...";
-//    if(!rB.cloneRepo(srcUrl, srcDirectory)){
-//        qDebug(logWarning()) << "Ошибка при клонировании src!";
-//    }
-//    else qDebug(logInfo()) << "src успешно склонированно";
-
-//    qDebug(logInfo()) << "Клонирование hal в директорию " + HALDirectory + "...";
-//    if (!rB.cloneRepo(HALUrl, HALDirectory)){
-//           qDebug(logWarning()) << "Ошибка при клонировании hal!";
-//    }
-//    else qDebug(logInfo()) << "hal успешно склонированно";
-
-//    qDebug(logInfo()) << "Клонирование bsp в директорию " + BSPDirectory + "...";
-//    if(!rB.cloneRepo(BSPUrl, BSPDirectory)){
-//        qDebug(logWarning()) << "Ошибка при клонировании bsp!";
-//    }
-//    else qDebug(logInfo()) << "bsp успешно склонированно";
-
-    qDebug(logInfo()) << "Клонирование freeRTOS в директорию" << freeRTOSDirectory << "...";
-    if(!rB.cloneFREERTOS(freeRTOSUrl,freeRTOSDirectory,
-                     "portable/GCC/" + set.value("architecture/mc" + QString::number(index),QString("empty string")).toString())){
-        qDebug(logWarning()) << "Ошибка при клонировании freeRTOS!";
-    }
-    else qDebug(logInfo()) << "freeRTOS успешно склонированно";
+    if (!cloneFreeRTOS(freeRTOSUrl,
+                       freeRTOSDirectory,
+                       "portable/GCC/" + set.value("architecture/mc" + QString::number(index),QString("empty string")).toString())) return;
 
     qDebug(logInfo()) << "Создание файлов и папок...";
+    ui->labelProgress->setText("Создание файлов и папок...");
     rB.buildRepo();
     qDebug(logInfo()) << "Папки и файлы созданы";
+    ui->labelProgress->setText("Папки и файлы созданы");
+    progress = 100;
+    ui->progressBar->setValue(progress);
 }
 
 

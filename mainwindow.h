@@ -10,6 +10,7 @@
 #include <QProcess>
 #include <QCoreApplication>
 #include "repoBuilder.h"
+#include <thread>
 
 QT_BEGIN_NAMESPACE
 namespace Ui { class MainWindow; }
@@ -30,7 +31,11 @@ public slots:
     void editPath();
 
 private:
+    bool cloneFiles(const QString &repoUrl, const QString &directory, const QString &filesName);
+    bool cloneFreeRTOS(const QString &repoUrl, const QString &directory, const QString &repoSubDirectory);
     bool isCyrillic(wchar_t wch);
+    int progress;
+    QString version = "1.0.0";
     QList<QRadioButton*> radioList;
     Ui::MainWindow *ui;
 };
