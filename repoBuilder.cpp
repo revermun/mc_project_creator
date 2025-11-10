@@ -35,7 +35,6 @@ bool repoBuilder::buildRepo()
     QString docPath = defaultPath + '/' + "doc";
 
     QString srcPath = defaultPath + '/' + "src";
-    QString buildPath = srcPath + '/' + "build";
 
     QString appPath = srcPath + '/' + "app";
     QString freeRTOSPath = srcPath + '/' + "freeRTOS";
@@ -55,7 +54,6 @@ bool repoBuilder::buildRepo()
     if(!makePath(binPath)) res = false;
     if(!makePath(bootloaderPath)) res = false;
     if(!makePath(docPath)) res = false;
-    if(!makePath(buildPath)) res = false;
     if(!makePath(srcPath)) res = false;
     if(!makePath(appPath)) res = false;
     if(!makePath(freeRTOSPath)) res = false;
@@ -68,6 +66,10 @@ bool repoBuilder::buildRepo()
     if(!makePath(corePath)) res = false;
     if(!makePath(devicePath)) res = false;
     if(!makePath(driverPath)) res = false;
+
+    QString readmeFile = defaultPath + '/' + "README.md";
+
+    if(!makeFile(readmeFile)) res = false;
 
     return res;
 }

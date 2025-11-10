@@ -2,6 +2,15 @@
 #include "ui_mainwindow.h"
 #include "LoggingCategories.h"
 
+/*
+1. папка build лежит в верхнем уровне, а не в src. её даже создавать не надо, её при сборке CMake создаст.      check
+2. Надо добавить .gitignore в верхнем уровне. он стандартный и одинаковый, я его залил в репу vscode.           check
+3. И наверное просто создать README.md файл, он будет лежать в верхнем уровне                                   check
+4. Логи немного обрезаны, первые буквы как будто обрезаны                                                       непонял
+5. Добавить проверку на существование проекта в папке, и спрашивать надо ли перезаписывать.
+Я попытался в существующий проект в папке заново создать, он дал. Но я не понял он перезаписывает?
+*/
+
 bool MainWindow::isCyrillic(wchar_t wch)
 {
     int code = (int)wch;
@@ -118,6 +127,25 @@ bool MainWindow::cloneFreeRTOS(const QString &repoUrl, const QString &directory,
     return true;
 }
 
+
+bool createChooseDirectoryClearmsgBox(QWidget *parent = nullptr)
+{
+    QMessageBox msgBox(parent);
+    msgBox.setIcon(QMessageBox::Question);
+    msgBox.setWindowTitle("Выберите вариант");
+    msgBox.setText("В заданной папке есть файлы. Очистить папку и продолжить?");
+
+    QPushButton *buttonTrue = msgBox.addButton("Да", QMessageBox::AcceptRole);
+    QPushButton *buttonFalse = msgBox.addButton("Нет", QMessageBox::RejectRole);
+
+    msgBox.exec();
+
+    if (msgBox.clickedButton() == buttonTrue)
+        return true;
+    else
+        return false;
+}
+
 /// Из гита клонить HAL, BSP, FREETROS
 /// HAL и BSP определяются по модели МК(microcontrollers в конфиге), FREERTOS архитектурой ядра(architecture в конфиге)
 /// Директории: FREERTOS - src/FreeRTOS; HAL - src/hal; BSP - src/bsp
@@ -125,8 +153,6 @@ void MainWindow::createProject()
 {
     progress = 0;
     ui->progressBar->setValue(progress);
-    ui->labelProgress->setText("");
-
     if (ui->lineEditPath->text() == "") return;
     int index = 1;
     for(int i = 0; i<ui->verticalLayout->count(); i++){
@@ -139,11 +165,29 @@ void MainWindow::createProject()
     }
     QString repoName = ui->lineEditProjectName->text();
     QString directory;
-    if (repoName!="") directory = QDir::fromNativeSeparators(ui->lineEditPath->text()) + '/' + repoName;
-    else directory = QDir::fromNativeSeparators(ui->lineEditPath->text());
-    qDebug(logInfo()) << "Создание проекта" << repoName << "в директории" << directory << "...";
+    if (repoName!="") {
+        directory = QDir::fromNativeSeparators(ui->lineEditPath->text()) + '/' + repoName;
+        qDebug(logInfo()) << "Создание проекта в директории" << directory << "...";}
+    else {
+        directory = QDir::fromNativeSeparators(ui->lineEditPath->text());
+        qDebug(logInfo()) << "Создание проекта" << repoName << "в директории" << directory << "...";}
+
     repoBuilder rB = repoBuilder(directory);
+    QDir dir = QDir(directory);
+    if (!dir.isEmpty()) {
+        qDebug(logInfo()) << "В папке есть файлы";
+        bool res = createChooseDirectoryClearmsgBox(this);
+        if (res) {
+            qDebug(logInfo()) << "Удаление содержимого...";
+            rB.deleteDir(directory, true);
+        }
+        else return;
+    }
+
+
+
     QSettings set(QCoreApplication::applicationDirPath()+"/config.ini",QSettings::IniFormat);
+
     QString HALUrl = set.value("HAL/mc"+QString::number(index),QString("empty string")).toString();
     QString BSPUrl = set.value("BSP/mc"+QString::number(index),QString("empty string")).toString();
     QString freeRTOSUrl = set.value("freeRTOS/url",QString("empty string")).toString();
@@ -154,6 +198,7 @@ void MainWindow::createProject()
     QString freeRTOSDirectory = directory + '/' + "src/FreeRTOS";
     QString vscodeDirectory = directory;
     QString srcDirectory = directory + '/' + "src/";
+
 
     if (!cloneFiles(HALUrl, HALDirectory, "HAL")) return;
     if (!cloneFiles(BSPUrl, BSPDirectory, "BSP")) return;

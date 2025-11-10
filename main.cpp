@@ -1,4 +1,5 @@
 #include "mainwindow.h"
+
 #include <QApplication>
 #include <QFile>
 #include <QDir>
@@ -27,7 +28,7 @@ void messageHandler(QtMsgType type, const QMessageLogContext &context, const QSt
     case QtFatalMsg:    out << "FTL "; break;
     }
     // Записываем в вывод категорию сообщения и само сообщение
-    out << context.category << ": " << msg << endl;
+    out << context.category << ": " << msg << "\n";
     out.flush();    // Очищаем буферизированные данные
 }
 

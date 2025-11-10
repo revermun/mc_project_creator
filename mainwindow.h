@@ -2,6 +2,8 @@
 #define MAINWINDOW_H
 
 #include <QMainWindow>
+#include <QMessageBox>
+#include <QWindow>
 #include <QRadioButton>
 #include <QCheckBox>
 #include <QFileDialog>
@@ -9,8 +11,10 @@
 #include <QSettings>
 #include <QProcess>
 #include <QCoreApplication>
+#include <iostream>
+
 #include "repoBuilder.h"
-#include <thread>
+
 
 QT_BEGIN_NAMESPACE
 namespace Ui { class MainWindow; }
@@ -33,6 +37,7 @@ public slots:
 private:
     bool cloneFiles(const QString &repoUrl, const QString &directory, const QString &filesName);
     bool cloneFreeRTOS(const QString &repoUrl, const QString &directory, const QString &repoSubDirectory);
+    bool createConfirmDialog();
     bool isCyrillic(wchar_t wch);
     int progress;
     QString version = "1.0.0";
