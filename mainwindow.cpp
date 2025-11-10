@@ -8,7 +8,7 @@
 3. И наверное просто создать README.md файл, он будет лежать в верхнем уровне                                   check
 4. Логи немного обрезаны, первые буквы как будто обрезаны                                                       непонял
 5. Добавить проверку на существование проекта в папке, и спрашивать надо ли перезаписывать.
-Я попытался в существующий проект в папке заново создать, он дал. Но я не понял он перезаписывает?
+Я попытался в существующий проект в папке заново создать, он дал. Но я не понял он перезаписывает?              check
 */
 
 bool MainWindow::isCyrillic(wchar_t wch)
@@ -167,10 +167,10 @@ void MainWindow::createProject()
     QString directory;
     if (repoName!="") {
         directory = QDir::fromNativeSeparators(ui->lineEditPath->text()) + '/' + repoName;
-        qDebug(logInfo()) << "Создание проекта в директории" << directory << "...";}
+        qDebug(logInfo()) << "Создание проекта" << repoName << "в директории" << directory << "...";}
     else {
         directory = QDir::fromNativeSeparators(ui->lineEditPath->text());
-        qDebug(logInfo()) << "Создание проекта" << repoName << "в директории" << directory << "...";}
+        qDebug(logInfo()) << "Создание проекта в директории" << directory << "...";}
 
     repoBuilder rB = repoBuilder(directory);
     QDir dir = QDir(directory);
