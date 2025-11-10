@@ -153,6 +153,7 @@ void MainWindow::createProject()
 {
     progress = 0;
     ui->progressBar->setValue(progress);
+    ui->labelProgress->clear();
     if (ui->lineEditPath->text() == "") return;
     int index = 1;
     for(int i = 0; i<ui->verticalLayout->count(); i++){
@@ -181,7 +182,10 @@ void MainWindow::createProject()
             qDebug(logInfo()) << "Удаление содержимого...";
             rB.deleteDir(directory, true);
         }
-        else return;
+        else {
+            qDebug(logInfo()) << "Создание отменено";
+            return;
+        }
     }
 
 
