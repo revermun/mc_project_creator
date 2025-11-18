@@ -209,15 +209,6 @@ void MainWindow::createProject()
         QRadioButton* radio = radioList.at(index-1);
         if (radio->isChecked()) break;
     }
-    std::cout << index << std::endl;
-//    for(int i = 0; i<ui->verticalLayout->count(); i++){
-//        QWidget *w = ui->verticalLayout->itemAt(i)->widget();
-//        QRadioButton *rb = qobject_cast<QRadioButton *>(w);
-//        if (rb->isChecked()) {
-//                break;
-//            }
-//        else (index++);
-//    }
     QString repoName = ui->lineEditProjectName->text();
     QString directory;
     if (repoName!="") {

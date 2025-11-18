@@ -41,7 +41,7 @@ private:
     bool isCyrillic(wchar_t wch);
     int progress;
     QList<QRadioButton*> radioList;
-    QString version = "1.0.1";
+    QString version = "1.0.2";
     Ui::MainWindow *ui;
 };
 #endif // MAINWINDOW_H
