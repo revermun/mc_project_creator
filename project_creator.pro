@@ -12,11 +12,13 @@ SOURCES += \
     LoggingCategories.cpp \
     main.cpp \
     mainwindow.cpp \
+    qradiobuttontree.cpp \
     repoBuilder.cpp
 
 HEADERS += \
     LoggingCategories.h \
     mainwindow.h \
+    qradiobuttontree.h \
     repoBuilder.h
 
 FORMS += \

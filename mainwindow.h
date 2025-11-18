@@ -40,8 +40,8 @@ private:
     bool createConfirmDialog();
     bool isCyrillic(wchar_t wch);
     int progress;
-    QString version = "1.0.0";
     QList<QRadioButton*> radioList;
+    QString version = "1.0.1";
     Ui::MainWindow *ui;
 };
 #endif // MAINWINDOW_H

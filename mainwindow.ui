@@ -25,20 +25,10 @@
       </property>
      </widget>
     </item>
-    <item row="3" column="3">
-     <widget class="QPushButton" name="pushButtonCreate">
-      <property name="enabled">
-       <bool>false</bool>
-      </property>
+    <item row="0" column="0">
+     <widget class="QLabel" name="label">
       <property name="text">
-       <string>Создать</string>
-      </property>
-     </widget>
-    </item>
-    <item row="0" column="3">
-     <widget class="QPushButton" name="pushButtonFileDialog">
-      <property name="text">
-       <string>Обзор</string>
+       <string>Путь</string>
       </property>
      </widget>
     </item>
@@ -52,27 +42,15 @@
       </property>
      </widget>
     </item>
-    <item row="2" column="2">
-     <widget class="QGroupBox" name="groupBox">
-      <property name="title">
-       <string/>
+    <item row="3" column="3">
+     <widget class="QPushButton" name="pushButtonCreate">
+      <property name="enabled">
+       <bool>false</bool>
       </property>
-      <layout class="QGridLayout" name="gridLayout_2">
-       <item row="0" column="0">
-        <layout class="QVBoxLayout" name="verticalLayout"/>
-       </item>
-      </layout>
-     </widget>
-    </item>
-    <item row="0" column="0">
-     <widget class="QLabel" name="label">
       <property name="text">
-       <string>Путь</string>
+       <string>Создать</string>
       </property>
      </widget>
-    </item>
-    <item row="1" column="2">
-     <widget class="QLineEdit" name="lineEditProjectName"/>
     </item>
     <item row="3" column="2">
      <layout class="QVBoxLayout" name="verticalLayout_3">
@@ -101,6 +79,31 @@
       </item>
      </layout>
     </item>
+    <item row="0" column="3">
+     <widget class="QPushButton" name="pushButtonFileDialog">
+      <property name="text">
+       <string>Обзор</string>
+      </property>
+     </widget>
+    </item>
+    <item row="1" column="2">
+     <widget class="QLineEdit" name="lineEditProjectName"/>
+    </item>
+    <item row="2" column="2">
+     <widget class="QRadioButtonTree" name="radioTree">
+      <property name="font">
+       <font>
+        <family>Consolas</family>
+        <pointsize>7</pointsize>
+       </font>
+      </property>
+      <column>
+       <property name="text">
+        <string>Микроконтроллеры</string>
+       </property>
+      </column>
+     </widget>
+    </item>
    </layout>
   </widget>
   <widget class="QMenuBar" name="menubar">
@@ -115,6 +118,13 @@
   </widget>
   <widget class="QStatusBar" name="statusbar"/>
  </widget>
+ <customwidgets>
+  <customwidget>
+   <class>QRadioButtonTree</class>
+   <extends>QTreeWidget</extends>
+   <header>qradiobuttontree.h</header>
+  </customwidget>
+ </customwidgets>
  <resources/>
  <connections>
   <connection>

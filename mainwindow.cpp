@@ -2,14 +2,45 @@
 #include "ui_mainwindow.h"
 #include "LoggingCategories.h"
 
-/*
-1. папка build лежит в верхнем уровне, а не в src. её даже создавать не надо, её при сборке CMake создаст.      check
-2. Надо добавить .gitignore в верхнем уровне. он стандартный и одинаковый, я его залил в репу vscode.           check
-3. И наверное просто создать README.md файл, он будет лежать в верхнем уровне                                   check
-4. Логи немного обрезаны, первые буквы как будто обрезаны                                                       непонял
-5. Добавить проверку на существование проекта в папке, и спрашивать надо ли перезаписывать.
-Я попытался в существующий проект в папке заново создать, он дал. Но я не понял он перезаписывает?              check
-*/
+///TODO: Разобраться как автоматически конфигурировать список мк
+/// добавить толи отдельную ввкладку с дополнением .ini файла, толи забить и думать как с сервера сгружать конфигурацию
+/// как вариант просто склонить специальную конфигурацию с гита и создать таким образом список
+/// кнопка Загрузить конфигурацию, функционал из конструктора перетащить в неё + клон в начале
+/// наверное заменить группбокс на тривью
+/// Работа с qradiobuttontree:
+/// Создание категории:
+///     QTreeWidgetItem* pItem;
+///     pItem = ui->treeWidget->addItem("1");
+/// Создание элемента категории:
+///     QTreeWidgetItem* pW02 = ui->treeWidget->addItem(pItem, "First property");
+/// Обращение к категории:
+///       QTreeWidgetItem *item = ui->treeWidget->topLevelItem( i );
+/// Обращение к элементу категории:
+///       QWidget *widget = ui->treeWidget->itemWidget(item->child(j), 0);
+///       QRadioButton* btn = qobject_cast<QRadioButton*>(widget);
+///
+///
+/// Для .ini файла добавить категорию family: в конструкторе читается family для каждого мк и создается категория если её ещё нет
+///
+/// Ещё вариант: Заместо .ini использовать .yaml или .json, где указывать каждый мк как отдельный объект с перечнем свойств: название - ключ, категория, ссылки
+/// выглядеть должно так:
+///  microcontrollers:
+///     STM32H7:
+///         family: stm
+///         hal: https://gitlab.borisblade.ru/common1/arm-firmware-sources/hardware-abstract-level/stm32h745.git
+///         bsp: https://gitlab.borisblade.ru/common1/arm-firmware-sources/bsp-templates/stm32h745.git
+///         architecture: ARM_CM7/r0p1
+///     1986E9x:
+///         family: mdr
+///         hal: https://gitlab.borisblade.ru/common1/arm-firmware-sources/hardware-abstract-level/mdr1986ve9x.git
+///         bsp: https://gitlab.borisblade.ru/common1/arm-firmware-sources/bsp-templates/mdr1986ve9x.git
+///         architecture: ARM_CM3
+///  FREERTOS: https://gitlab.borisblade.ru/common1/arm-firmware-sources/freertos.git
+///  vscode: https://gitlab.borisblade.ru/common1/arm-firmware-sources/vs-code-template.git
+///  src: https://gitlab.borisblade.ru/common1/arm-firmware-sources/src.git
+/// кнопка загрузить: клоним, читаем .yaml получаем словарь, проходимся по всем элементам под ключом microcontrollers и закидываем
+/// в соответствующие ветки дерева в зависимости от family. Если указанного family нет в дереве, то создается новая категория
+/// кнопка создать: по названию radiobutton, совпадающую с ключом получаем из элемента словаря под ключом microcontrollers всю информацию, далее по накатанной
 
 bool MainWindow::isCyrillic(wchar_t wch)
 {
@@ -24,6 +55,8 @@ MainWindow::MainWindow(QWidget *parent)
     ui->setupUi(this);
     statusBar()->showMessage(tr("Версия ПО: ") + this->version);
     QSettings set(QCoreApplication::applicationDirPath()+"/config.ini",QSettings::IniFormat);
+    set.setValue("family/mc1",QString("STM32"));
+    set.setValue("family/mc2",QString("MDR"));
     set.setValue("microcontrollers/mc1",QString("STM32H7"));
     set.setValue("microcontrollers/mc2",QString("1986E9x"));
     set.setValue("architecture/mc1",QString("ARM_CM7/r0p1"));
@@ -35,22 +68,38 @@ MainWindow::MainWindow(QWidget *parent)
     set.setValue("freeRTOS/url",QString("https://gitlab.borisblade.ru/common1/arm-firmware-sources/freertos.git"));
     set.setValue("vscode/url",QString("https://gitlab.borisblade.ru/common1/arm-firmware-sources/vs-code-template.git"));
     set.setValue("src/url",QString("https://gitlab.borisblade.ru/common1/arm-firmware-sources/src.git"));
+
     int index = 1;
-    while(set.value("microcontrollers/mc"+QString::number(index),QString("empty string")).toString()!="empty string"){
-        QRadioButton* radio = new QRadioButton();
-        radio->setText(set.value("microcontrollers/mc"+QString::number(index),QString("empty string")).toString());
-        if(index == 1) radio->setChecked(true);
+    QList<QString> familyList;
+    while(set.value("family/mc"+QString::number(index),QString("")).toString()!=""){
+        QString familyName = set.value("family/mc"+QString::number(index),QString("")).toString();
+        QRadioButton* radio;
+        if (familyList.indexOf(familyName)==-1){
+            familyList.append(familyName);
+            QTreeWidgetItem* newFamily = ui->radioTree->addItem(familyName);
+            QString mcName = set.value("microcontrollers/mc"+QString::number(index),QString("")).toString();
+            QTreeWidgetItem* newMc = ui->radioTree->addRadio(newFamily, mcName);
+            QWidget *widget = ui->radioTree->itemWidget(newMc, 0);
+            radio = qobject_cast<QRadioButton*>(widget);
+            if(index == 1) {
+                radio->setChecked(true);
+            }
+        }
+        else {
+            QTreeWidgetItem* targetFamily = ui->radioTree->topLevelItem(familyList.indexOf(familyName));
+            QString mcName = set.value("microcontrollers/mc"+QString::number(index),QString("")).toString();
+            QTreeWidgetItem* newMc = ui->radioTree->addRadio(targetFamily, mcName);
+            QWidget *widget = ui->radioTree->itemWidget(newMc, 0);
+            radio = qobject_cast<QRadioButton*>(widget);
+        }
+        radio->setStyleSheet("QRadioButton::indicator"
+                                                "{"
+                                                "width : 20px;"
+                                                "height : 20px;"
+                                                "}");
         radioList.append(radio);
         index++;
     }
-    for(auto radio: radioList){
-            ui->verticalLayout->addWidget(radio);
-            radio->show();
-    }
-
-    QSpacerItem* sItem = new QSpacerItem(0, 0, QSizePolicy::Minimum, QSizePolicy::Expanding);
-    ui->groupBox->layout()->addItem(sItem);
-
 }
 
 MainWindow::~MainWindow()
@@ -156,14 +205,19 @@ void MainWindow::createProject()
     ui->labelProgress->clear();
     if (ui->lineEditPath->text() == "") return;
     int index = 1;
-    for(int i = 0; i<ui->verticalLayout->count(); i++){
-        QWidget *w = ui->verticalLayout->itemAt(i)->widget();
-        QRadioButton *rb = qobject_cast<QRadioButton *>(w);
-        if (rb->isChecked()) {
-                break;
-            }
-        else (index++);
+    for (index; index<=radioList.count(); index++){
+        QRadioButton* radio = radioList.at(index-1);
+        if (radio->isChecked()) break;
     }
+    std::cout << index << std::endl;
+//    for(int i = 0; i<ui->verticalLayout->count(); i++){
+//        QWidget *w = ui->verticalLayout->itemAt(i)->widget();
+//        QRadioButton *rb = qobject_cast<QRadioButton *>(w);
+//        if (rb->isChecked()) {
+//                break;
+//            }
+//        else (index++);
+//    }
     QString repoName = ui->lineEditProjectName->text();
     QString directory;
     if (repoName!="") {
