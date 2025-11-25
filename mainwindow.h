@@ -12,6 +12,7 @@
 #include <QProcess>
 #include <QCoreApplication>
 #include <iostream>
+#include <QDomDocument>
 
 #include "repoBuilder.h"
 
@@ -33,15 +34,18 @@ public slots:
     void checkCyrillic();
     void createProject();
     void editPath();
+    void downloadConfig();
 
 private:
     bool cloneFiles(const QString &repoUrl, const QString &directory, const QString &filesName);
     bool cloneFreeRTOS(const QString &repoUrl, const QString &directory, const QString &repoSubDirectory);
     bool createConfirmDialog();
     bool isCyrillic(wchar_t wch);
+    bool getConfig();
     int progress;
     QList<QRadioButton*> radioList;
-    QString version = "1.0.2";
+    QList<std::pair<QString,QString>> mcAndFamilyList;
+    QString version = "1.0.3";
     Ui::MainWindow *ui;
 };
 #endif // MAINWINDOW_H

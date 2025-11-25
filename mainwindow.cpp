@@ -48,63 +48,96 @@ bool MainWindow::isCyrillic(wchar_t wch)
     return (code >= 0x400 && code <= 0x4ff);
 }
 
+bool createAddConfigNotification(QWidget *parent = nullptr)
+{
+    QMessageBox msgBox(parent);
+    msgBox.setIcon(QMessageBox::Warning);
+//    msgBox.setWindowTitle("Выберите вариант");
+    msgBox.setText("Не найден конфигурационный файл.\nНажмите кнопку \"добавить\" чтобы загрузить конфигурацию");
+
+    QPushButton *buttonTrue = msgBox.addButton("Ок", QMessageBox::YesRole);
+    msgBox.exec();
+
+    if (msgBox.clickedButton() == buttonTrue)
+        return true;
+    else
+        return false;
+}
+
 MainWindow::MainWindow(QWidget *parent)
     : QMainWindow(parent)
     , ui(new Ui::MainWindow)
 {
     ui->setupUi(this);
     statusBar()->showMessage(tr("Версия ПО: ") + this->version);
-    QSettings set(QCoreApplication::applicationDirPath()+"/config.ini",QSettings::IniFormat);
-    set.setValue("family/mc1",QString("STM32"));
-    set.setValue("family/mc2",QString("MDR"));
-    set.setValue("microcontrollers/mc1",QString("STM32H7"));
-    set.setValue("microcontrollers/mc2",QString("1986E9x"));
-    set.setValue("architecture/mc1",QString("ARM_CM7/r0p1"));
-    set.setValue("architecture/mc2",QString("ARM_CM3"));
-    set.setValue("HAL/mc1",QString("https://gitlab.borisblade.ru/common1/arm-firmware-sources/hardware-abstract-level/stm32h745.git"));
-    set.setValue("HAL/mc2",QString("https://gitlab.borisblade.ru/common1/arm-firmware-sources/hardware-abstract-level/mdr1986ve9x.git"));
-    set.setValue("BSP/mc1",QString("https://gitlab.borisblade.ru/common1/arm-firmware-sources/bsp-templates/stm32h745.git"));
-    set.setValue("BSP/mc2",QString("https://gitlab.borisblade.ru/common1/arm-firmware-sources/bsp-templates/mdr1986ve9x.git"));
-    set.setValue("freeRTOS/url",QString("https://gitlab.borisblade.ru/common1/arm-firmware-sources/freertos.git"));
-    set.setValue("vscode/url",QString("https://gitlab.borisblade.ru/common1/arm-firmware-sources/vs-code-template.git"));
-    set.setValue("src/url",QString("https://gitlab.borisblade.ru/common1/arm-firmware-sources/src.git"));
-
-    int index = 1;
-    QList<QString> familyList;
-    while(set.value("family/mc"+QString::number(index),QString("")).toString()!=""){
-        QString familyName = set.value("family/mc"+QString::number(index),QString("")).toString();
-        QRadioButton* radio;
-        if (familyList.indexOf(familyName)==-1){
-            familyList.append(familyName);
-            QTreeWidgetItem* newFamily = ui->radioTree->addItem(familyName);
-            QString mcName = set.value("microcontrollers/mc"+QString::number(index),QString("")).toString();
-            QTreeWidgetItem* newMc = ui->radioTree->addRadio(newFamily, mcName);
-            QWidget *widget = ui->radioTree->itemWidget(newMc, 0);
-            radio = qobject_cast<QRadioButton*>(widget);
-            if(index == 1) {
-                radio->setChecked(true);
-            }
-        }
-        else {
-            QTreeWidgetItem* targetFamily = ui->radioTree->topLevelItem(familyList.indexOf(familyName));
-            QString mcName = set.value("microcontrollers/mc"+QString::number(index),QString("")).toString();
-            QTreeWidgetItem* newMc = ui->radioTree->addRadio(targetFamily, mcName);
-            QWidget *widget = ui->radioTree->itemWidget(newMc, 0);
-            radio = qobject_cast<QRadioButton*>(widget);
-        }
-        radio->setStyleSheet("QRadioButton::indicator"
-                                                "{"
-                                                "width : 20px;"
-                                                "height : 20px;"
-                                                "}");
-        radioList.append(radio);
-        index++;
+    if (!getConfig()){
+        createAddConfigNotification(this);
     }
 }
+
 
 MainWindow::~MainWindow()
 {
     delete ui;
+}
+
+bool MainWindow::getConfig()
+{
+    QString dir = QCoreApplication::applicationDirPath()+"/config.xml";
+    QFile file(dir);
+    if (!file.open(QIODevice::ReadOnly))
+        return false;
+    QDomDocument doc("document");
+    if (!doc.setContent(&file)) {
+        file.close();
+        return false;
+    }
+    file.close();
+    QDomElement docElem = doc.documentElement();
+
+    QRadioButton* radio;
+    bool isFirstRadio = true;
+    QList<QString> familyList;
+    QDomNode familyXml = docElem.firstChild();
+    while(!familyXml.isNull()) {
+        QDomElement e = familyXml.toElement();
+        QString familyName = e.tagName();
+        familyList.append(familyName);
+        QTreeWidgetItem* newFamily = ui->radioTree->addItem(familyName);
+        QDomNode mcXml = familyXml.firstChild();
+        while(!mcXml.isNull()) {
+            QDomElement i = mcXml.toElement();
+            if(!i.isNull()) {
+                QString mcName = i.tagName();
+                mcAndFamilyList.append(std::pair<QString,QString>(mcName, familyName));
+                QTreeWidgetItem* newMc = ui->radioTree->addRadio(newFamily, mcName);
+                QWidget *widget = ui->radioTree->itemWidget(newMc, 0);
+                radio = qobject_cast<QRadioButton*>(widget);
+                radio->setStyleSheet("QRadioButton::indicator"
+                                                        "{"
+                                                        "width : 20px;"
+                                                        "height : 20px;"
+                                                        "}");
+                if(isFirstRadio == true) {
+                    radio->setChecked(true);
+                }
+                radioList.append(radio);
+            }
+            if(isFirstRadio) isFirstRadio = false;
+            mcXml = mcXml.nextSibling();
+        }
+        familyXml = familyXml.nextSibling();
+    }
+    return true;
+}
+
+void MainWindow::downloadConfig()
+{
+    QString dir = QFileDialog::getOpenFileName(this,
+          tr(""), "/home", tr("Configs (*.xml)"));
+    if (dir == "") {return;}
+     QFile::copy(dir, QCoreApplication::applicationDirPath()+"/config.xml");
+     getConfig();
 }
 
 void MainWindow::editPath()
@@ -204,11 +237,7 @@ void MainWindow::createProject()
     ui->progressBar->setValue(progress);
     ui->labelProgress->clear();
     if (ui->lineEditPath->text() == "") return;
-    int index = 1;
-    for (index; index<=radioList.count(); index++){
-        QRadioButton* radio = radioList.at(index-1);
-        if (radio->isChecked()) break;
-    }
+
     QString repoName = ui->lineEditProjectName->text();
     QString directory;
     if (repoName!="") {
@@ -232,16 +261,30 @@ void MainWindow::createProject()
             return;
         }
     }
-
-
-
-    QSettings set(QCoreApplication::applicationDirPath()+"/config.ini",QSettings::IniFormat);
-
-    QString HALUrl = set.value("HAL/mc"+QString::number(index),QString("empty string")).toString();
-    QString BSPUrl = set.value("BSP/mc"+QString::number(index),QString("empty string")).toString();
-    QString freeRTOSUrl = set.value("freeRTOS/url",QString("empty string")).toString();
-    QString vscodeUrl = set.value("vscode/url",QString("empty string")).toString();
-    QString srcUrl = set.value("src/url",QString("empty string")).toString();
+    int index = 1;
+    QString mcName;
+    QString familyName;
+    for (index; index<=radioList.count(); index++){
+        QRadioButton* radio = radioList.at(index-1);
+        if (radio->isChecked()){
+            mcName = radio->text();
+            for(auto pair: mcAndFamilyList){if(pair.first == mcName) {familyName = pair.second; break;}}
+            break;
+        }
+    }
+    QString confDir = QCoreApplication::applicationDirPath()+"/config.xml";
+    QFile file(confDir);
+    file.open(QIODevice::ReadOnly);
+    QDomDocument doc("document");
+    doc.setContent(&file);
+    QDomElement docElem = doc.documentElement();
+    QDomElement familyXml = docElem.firstChildElement(familyName);
+    QDomElement mcXml = familyXml.firstChildElement(mcName);
+    QString HALUrl = mcXml.attribute("HAL");
+    QString BSPUrl = familyXml.attribute("BSP");
+    QString freeRTOSUrl = docElem.attribute("freeRTOS");
+    QString vscodeUrl = docElem.attribute("vscode");
+    QString srcUrl = docElem.attribute("src");
     QString HALDirectory = directory + '/' + "src/hal";
     QString BSPDirectory = directory + '/' + "src/bsp";
     QString freeRTOSDirectory = directory + '/' + "src/FreeRTOS";
@@ -256,7 +299,7 @@ void MainWindow::createProject()
 
     if (!cloneFreeRTOS(freeRTOSUrl,
                        freeRTOSDirectory,
-                       "portable/GCC/" + set.value("architecture/mc" + QString::number(index),QString("empty string")).toString())) return;
+                       "portable/GCC/" + mcXml.attribute("architecture"))) return;
 
     qDebug(logInfo()) << "Создание файлов и папок...";
     ui->labelProgress->setText("Создание файлов и папок...");

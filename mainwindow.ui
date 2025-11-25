@@ -18,10 +18,31 @@
     <bool>true</bool>
    </property>
    <layout class="QGridLayout" name="gridLayout">
-    <item row="1" column="0">
-     <widget class="QLabel" name="label_2">
+    <item row="1" column="2">
+     <widget class="QLineEdit" name="lineEditProjectName"/>
+    </item>
+    <item row="2" column="2">
+     <widget class="QRadioButtonTree" name="radioTree">
+      <property name="font">
+       <font>
+        <family>Consolas</family>
+        <pointsize>7</pointsize>
+       </font>
+      </property>
+      <column>
+       <property name="text">
+        <string>Микроконтроллеры</string>
+       </property>
+      </column>
+     </widget>
+    </item>
+    <item row="3" column="3">
+     <widget class="QPushButton" name="pushButtonCreate">
+      <property name="enabled">
+       <bool>false</bool>
+      </property>
       <property name="text">
-       <string>Имя проекта</string>
+       <string>Создать</string>
       </property>
      </widget>
     </item>
@@ -29,6 +50,13 @@
      <widget class="QLabel" name="label">
       <property name="text">
        <string>Путь</string>
+      </property>
+     </widget>
+    </item>
+    <item row="0" column="3">
+     <widget class="QPushButton" name="pushButtonFileDialog">
+      <property name="text">
+       <string>Обзор</string>
       </property>
      </widget>
     </item>
@@ -42,13 +70,10 @@
       </property>
      </widget>
     </item>
-    <item row="3" column="3">
-     <widget class="QPushButton" name="pushButtonCreate">
-      <property name="enabled">
-       <bool>false</bool>
-      </property>
+    <item row="1" column="0">
+     <widget class="QLabel" name="label_2">
       <property name="text">
-       <string>Создать</string>
+       <string>Имя проекта</string>
       </property>
      </widget>
     </item>
@@ -79,30 +104,29 @@
       </item>
      </layout>
     </item>
-    <item row="0" column="3">
-     <widget class="QPushButton" name="pushButtonFileDialog">
-      <property name="text">
-       <string>Обзор</string>
-      </property>
-     </widget>
-    </item>
-    <item row="1" column="2">
-     <widget class="QLineEdit" name="lineEditProjectName"/>
-    </item>
-    <item row="2" column="2">
-     <widget class="QRadioButtonTree" name="radioTree">
-      <property name="font">
-       <font>
-        <family>Consolas</family>
-        <pointsize>7</pointsize>
-       </font>
-      </property>
-      <column>
-       <property name="text">
-        <string>Микроконтроллеры</string>
-       </property>
-      </column>
-     </widget>
+    <item row="2" column="0">
+     <layout class="QVBoxLayout" name="verticalLayout">
+      <item>
+       <widget class="QPushButton" name="pushButton">
+        <property name="text">
+         <string>Загрузить</string>
+        </property>
+       </widget>
+      </item>
+      <item>
+       <spacer name="verticalSpacer">
+        <property name="orientation">
+         <enum>Qt::Vertical</enum>
+        </property>
+        <property name="sizeHint" stdset="0">
+         <size>
+          <width>20</width>
+          <height>40</height>
+         </size>
+        </property>
+       </spacer>
+      </item>
+     </layout>
     </item>
    </layout>
   </widget>
@@ -150,8 +174,8 @@
    <slot>createProject()</slot>
    <hints>
     <hint type="sourcelabel">
-     <x>737</x>
-     <y>558</y>
+     <x>790</x>
+     <y>556</y>
     </hint>
     <hint type="destinationlabel">
      <x>743</x>
@@ -175,11 +199,28 @@
     </hint>
    </hints>
   </connection>
+  <connection>
+   <sender>pushButton</sender>
+   <signal>clicked()</signal>
+   <receiver>MainWindow</receiver>
+   <slot>downloadConfig()</slot>
+   <hints>
+    <hint type="sourcelabel">
+     <x>77</x>
+     <y>110</y>
+    </hint>
+    <hint type="destinationlabel">
+     <x>81</x>
+     <y>141</y>
+    </hint>
+   </hints>
+  </connection>
  </connections>
  <slots>
   <signal>cyrillicPathWarning()</signal>
   <slot>editPath()</slot>
   <slot>createProject()</slot>
   <slot>checkCyrillic()</slot>
+  <slot>downloadConfig()</slot>
  </slots>
 </ui>
