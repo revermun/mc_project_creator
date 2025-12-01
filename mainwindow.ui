@@ -107,10 +107,26 @@
     <item row="2" column="0">
      <layout class="QVBoxLayout" name="verticalLayout">
       <item>
-       <widget class="QPushButton" name="pushButton">
-        <property name="text">
-         <string>Загрузить</string>
+       <widget class="QGroupBox" name="groupBox">
+        <property name="title">
+         <string>Загрузить список</string>
         </property>
+        <layout class="QVBoxLayout" name="verticalLayout_4">
+         <item>
+          <widget class="QPushButton" name="pushButton">
+           <property name="text">
+            <string>Локально</string>
+           </property>
+          </widget>
+         </item>
+         <item>
+          <widget class="QPushButton" name="pushButton_2">
+           <property name="text">
+            <string>Удаленно</string>
+           </property>
+          </widget>
+         </item>
+        </layout>
        </widget>
       </item>
       <item>
@@ -206,12 +222,28 @@
    <slot>downloadConfig()</slot>
    <hints>
     <hint type="sourcelabel">
-     <x>77</x>
-     <y>110</y>
+     <x>99</x>
+     <y>145</y>
     </hint>
     <hint type="destinationlabel">
      <x>81</x>
      <y>141</y>
+    </hint>
+   </hints>
+  </connection>
+  <connection>
+   <sender>pushButton_2</sender>
+   <signal>clicked()</signal>
+   <receiver>MainWindow</receiver>
+   <slot>cloneConfig()</slot>
+   <hints>
+    <hint type="sourcelabel">
+     <x>90</x>
+     <y>167</y>
+    </hint>
+    <hint type="destinationlabel">
+     <x>135</x>
+     <y>198</y>
     </hint>
    </hints>
   </connection>
@@ -222,5 +254,6 @@
   <slot>createProject()</slot>
   <slot>checkCyrillic()</slot>
   <slot>downloadConfig()</slot>
+  <slot>cloneConfig()</slot>
  </slots>
 </ui>

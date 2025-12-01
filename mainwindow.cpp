@@ -2,11 +2,6 @@
 #include "ui_mainwindow.h"
 #include "LoggingCategories.h"
 
-///TODO: Разобраться как автоматически конфигурировать список мк
-/// добавить толи отдельную ввкладку с дополнением .ini файла, толи забить и думать как с сервера сгружать конфигурацию
-/// как вариант просто склонить специальную конфигурацию с гита и создать таким образом список
-/// кнопка Загрузить конфигурацию, функционал из конструктора перетащить в неё + клон в начале
-/// наверное заменить группбокс на тривью
 /// Работа с qradiobuttontree:
 /// Создание категории:
 ///     QTreeWidgetItem* pItem;
@@ -20,21 +15,6 @@
 ///       QRadioButton* btn = qobject_cast<QRadioButton*>(widget);
 ///
 ///
-/// Для .ini файла добавить категорию family: в конструкторе читается family для каждого мк и создается категория если её ещё нет
-///
-/// Ещё вариант: Заместо .ini использовать .yaml или .json, где указывать каждый мк как отдельный объект с перечнем свойств: название - ключ, категория, ссылки
-/// выглядеть должно так:
-///  microcontrollers:
-///     STM32H7:
-///         family: stm
-///         hal: https://gitlab.borisblade.ru/common1/arm-firmware-sources/hardware-abstract-level/stm32h745.git
-///         bsp: https://gitlab.borisblade.ru/common1/arm-firmware-sources/bsp-templates/stm32h745.git
-///         architecture: ARM_CM7/r0p1
-///     1986E9x:
-///         family: mdr
-///         hal: https://gitlab.borisblade.ru/common1/arm-firmware-sources/hardware-abstract-level/mdr1986ve9x.git
-///         bsp: https://gitlab.borisblade.ru/common1/arm-firmware-sources/bsp-templates/mdr1986ve9x.git
-///         architecture: ARM_CM3
 ///  FREERTOS: https://gitlab.borisblade.ru/common1/arm-firmware-sources/freertos.git
 ///  vscode: https://gitlab.borisblade.ru/common1/arm-firmware-sources/vs-code-template.git
 ///  src: https://gitlab.borisblade.ru/common1/arm-firmware-sources/src.git
@@ -52,8 +32,8 @@ bool createAddConfigNotification(QWidget *parent = nullptr)
 {
     QMessageBox msgBox(parent);
     msgBox.setIcon(QMessageBox::Warning);
-//    msgBox.setWindowTitle("Выберите вариант");
-    msgBox.setText("Не найден конфигурационный файл.\nНажмите кнопку \"добавить\" чтобы загрузить конфигурацию");
+    msgBox.setWindowTitle("Нет конфигурации!");
+    msgBox.setText("Не найден конфигурационный файл.\nНажмите одну из кнопок в категории \"Загрузить список\" чтобы загрузить конфигурацию");
 
     QPushButton *buttonTrue = msgBox.addButton("Ок", QMessageBox::YesRole);
     msgBox.exec();
@@ -93,8 +73,11 @@ bool MainWindow::getConfig()
         return false;
     }
     file.close();
-    QDomElement docElem = doc.documentElement();
 
+    QDomElement docElem = doc.documentElement();
+    mcAndFamilyList.clear();
+    radioList.clear();
+    ui->radioTree->clear();
     QRadioButton* radio;
     bool isFirstRadio = true;
     QList<QString> familyList;
@@ -136,8 +119,51 @@ void MainWindow::downloadConfig()
     QString dir = QFileDialog::getOpenFileName(this,
           tr(""), "/home", tr("Configs (*.xml)"));
     if (dir == "") {return;}
-     QFile::copy(dir, QCoreApplication::applicationDirPath()+"/config.xml");
-     getConfig();
+    QFile::remove(QCoreApplication::applicationDirPath()+"/config.xml");
+    QFile::copy(dir, QCoreApplication::applicationDirPath()+"/config.xml");
+    getConfig();
+}
+
+QString getTextFromDialog(QWidget *parent = nullptr, const QString &title = "Введите текст",
+                         const QString &labelText = "Текст:")
+{
+    QDialog dialog(parent);
+    dialog.setWindowTitle(title);
+    dialog.setFixedSize(600, 250);
+
+    QVBoxLayout *layout = new QVBoxLayout(&dialog);
+
+    QLabel *label = new QLabel(labelText);
+    QLineEdit *lineEdit = new QLineEdit();
+    QPushButton *okButton = new QPushButton("OK");
+
+    layout->addWidget(label);
+    layout->addWidget(lineEdit);
+    layout->addWidget(okButton);
+
+    // Подключить сигнал кнопки к закрытию диалога
+    QObject::connect(okButton, &QPushButton::clicked, &dialog, &QDialog::accept);
+
+    // Фокус на lineEdit
+    lineEdit->setFocus();
+
+    // Модальное выполнение
+    if (dialog.exec() == QDialog::Accepted) {
+        return lineEdit->text();
+    }
+
+    return QString(); // Пустая строка при отмене
+}
+
+
+
+void MainWindow::cloneConfig()
+{
+    QString repo = getTextFromDialog(this, "Загрузка конфигурации", "Введите адрес директория с конфигурацией");
+    repoBuilder rB = repoBuilder();
+    QFile::remove(QCoreApplication::applicationDirPath()+"/config.xml");
+    rB.cloneRepo(repo, QCoreApplication::applicationDirPath());
+    getConfig();
 }
 
 void MainWindow::editPath()

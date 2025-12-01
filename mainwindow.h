@@ -35,6 +35,7 @@ public slots:
     void createProject();
     void editPath();
     void downloadConfig();
+    void cloneConfig();
 
 private:
     bool cloneFiles(const QString &repoUrl, const QString &directory, const QString &filesName);
@@ -45,7 +46,7 @@ private:
     int progress;
     QList<QRadioButton*> radioList;
     QList<std::pair<QString,QString>> mcAndFamilyList;
-    QString version = "1.0.3";
+    QString version = "1.0.4";
     Ui::MainWindow *ui;
 };
 #endif // MAINWINDOW_H
