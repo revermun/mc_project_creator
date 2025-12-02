@@ -36,6 +36,7 @@ public slots:
     void editPath();
     void downloadConfig();
     void cloneConfig();
+    void performAction(QAction* action);
 
 private:
     bool cloneFiles(const QString &repoUrl, const QString &directory, const QString &filesName);
@@ -44,9 +45,10 @@ private:
     bool isCyrillic(wchar_t wch);
     bool getConfig();
     int progress;
+    int radioDiameter = 20;
     QList<QRadioButton*> radioList;
     QList<std::pair<QString,QString>> mcAndFamilyList;
-    QString version = "1.0.4";
+    QString version = "1.0.5";
     Ui::MainWindow *ui;
 };
 #endif // MAINWINDOW_H

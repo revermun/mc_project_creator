@@ -61,6 +61,45 @@ MainWindow::~MainWindow()
     delete ui;
 }
 
+void MainWindow::performAction(QAction* action)
+{
+    if(action->text()=="Уменьшить"){
+        QFontInfo treeInfo = ui->radioTree->fontInfo();
+        bool diameterChanged = false;
+        for (auto radio: radioList){
+            QFontInfo radioInfo = radio->fontInfo();
+            if (radioInfo.pointSize() > 4) {
+                if(!diameterChanged) radioDiameter--;
+                radio->setFont(QFont(radioInfo.family(),radioInfo.pointSize()-1,radioInfo.weight()));
+                radio->setStyleSheet("QRadioButton::indicator"
+                                                        "{"
+                                                        "width : "+QString::number(radioDiameter)+"px;"
+                                                        "height : "+QString::number(radioDiameter)+"px;"
+                                                        "}");
+            }
+        }
+        if (treeInfo.pointSize() > 5) ui->radioTree->setFont(QFont(treeInfo.family(),treeInfo.pointSize()-1,treeInfo.weight()));
+    }
+    else if (action->text()=="Увеличить"){
+        QFontInfo treeInfo = ui->radioTree->fontInfo();
+        bool diameterChanged = false;
+        for (auto radio: radioList){
+            QFontInfo radioInfo = radio->fontInfo();
+            if (radioInfo.pointSize() < 14){
+                if(!diameterChanged) radioDiameter++;
+                radio->setFont(QFont(radioInfo.family(),radioInfo.pointSize()+1,radioInfo.weight()));
+                radio->setStyleSheet("QRadioButton::indicator"
+                                                        "{"
+                                                        "width : "+QString::number(radioDiameter)+"px;"
+                                                        "height : "+QString::number(radioDiameter)+"px;"
+                                                        "}");
+            }
+
+        }
+        if (treeInfo.pointSize() < 15) ui->radioTree->setFont(QFont(treeInfo.family(),treeInfo.pointSize()+1,treeInfo.weight()));
+    }
+}
+
 bool MainWindow::getConfig()
 {
     QString dir = QCoreApplication::applicationDirPath()+"/config.xml";
@@ -98,9 +137,10 @@ bool MainWindow::getConfig()
                 radio = qobject_cast<QRadioButton*>(widget);
                 radio->setStyleSheet("QRadioButton::indicator"
                                                         "{"
-                                                        "width : 20px;"
-                                                        "height : 20px;"
+                                                        "width : "+QString::number(radioDiameter)+"px;"
+                                                        "height : "+QString::number(radioDiameter)+"px;"
                                                         "}");
+
                 if(isFirstRadio == true) {
                     radio->setChecked(true);
                 }

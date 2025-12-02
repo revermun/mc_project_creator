@@ -155,8 +155,38 @@
      <height>21</height>
     </rect>
    </property>
+   <widget class="QMenu" name="menu">
+    <property name="title">
+     <string>Вид</string>
+    </property>
+    <widget class="QMenu" name="menu_2">
+     <property name="title">
+      <string>Масштаб списка</string>
+     </property>
+     <addaction name="tree_font_increase"/>
+     <addaction name="tree_font_decrease"/>
+    </widget>
+    <addaction name="menu_2"/>
+   </widget>
+   <addaction name="menu"/>
   </widget>
   <widget class="QStatusBar" name="statusbar"/>
+  <action name="tree_font_increase">
+   <property name="text">
+    <string>Увеличить</string>
+   </property>
+   <property name="shortcut">
+    <string>Ctrl+=</string>
+   </property>
+  </action>
+  <action name="tree_font_decrease">
+   <property name="text">
+    <string>Уменьшить</string>
+   </property>
+   <property name="shortcut">
+    <string>Ctrl+-</string>
+   </property>
+  </action>
  </widget>
  <customwidgets>
   <customwidget>
@@ -247,6 +277,22 @@
     </hint>
    </hints>
   </connection>
+  <connection>
+   <sender>menubar</sender>
+   <signal>triggered(QAction*)</signal>
+   <receiver>MainWindow</receiver>
+   <slot>performAction(QAction*)</slot>
+   <hints>
+    <hint type="sourcelabel">
+     <x>216</x>
+     <y>11</y>
+    </hint>
+    <hint type="destinationlabel">
+     <x>134</x>
+     <y>27</y>
+    </hint>
+   </hints>
+  </connection>
  </connections>
  <slots>
   <signal>cyrillicPathWarning()</signal>
@@ -255,5 +301,6 @@
   <slot>checkCyrillic()</slot>
   <slot>downloadConfig()</slot>
   <slot>cloneConfig()</slot>
+  <slot>performAction(QAction*)</slot>
  </slots>
 </ui>
