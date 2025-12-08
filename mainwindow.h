@@ -49,7 +49,7 @@ private:
     int radioDiameter = 20;
     QList<QRadioButton*> radioList;
     QMultiMap<QString,QString> categoryMap;
-    QString version = "1.0.5";
+    QString version = "1.1.0";
     Ui::MainWindow *ui;
 };
 #endif // MAINWINDOW_H
