@@ -13,6 +13,7 @@
 #include <QCoreApplication>
 #include <iostream>
 #include <QDomDocument>
+#include <QMultiMap>
 
 #include "repoBuilder.h"
 
@@ -47,7 +48,7 @@ private:
     int progress;
     int radioDiameter = 20;
     QList<QRadioButton*> radioList;
-    QList<std::pair<QString,QString>> mcAndFamilyList;
+    QMultiMap<QString,QString> categoryMap;
     QString version = "1.0.5";
     Ui::MainWindow *ui;
 };

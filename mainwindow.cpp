@@ -64,7 +64,7 @@ MainWindow::~MainWindow()
 void MainWindow::performAction(QAction* action)
 {
     if(action->text()=="Уменьшить"){
-        QFontInfo treeInfo = ui->radioTree->fontInfo();
+        QFontInfo treeInfo = ui->radioTreeMc->fontInfo();
         bool diameterChanged = false;
         for (auto radio: radioList){
             QFontInfo radioInfo = radio->fontInfo();
@@ -78,10 +78,15 @@ void MainWindow::performAction(QAction* action)
                                                         "}");
             }
         }
-        if (treeInfo.pointSize() > 5) ui->radioTree->setFont(QFont(treeInfo.family(),treeInfo.pointSize()-1,treeInfo.weight()));
+        QList<QRadioButtonTree*> treeList;
+        treeList.append(ui->radioTreeBoard);
+        treeList.append(ui->radioTreeMc);
+        for(auto tree: treeList){
+            if (treeInfo.pointSize() > 5) tree->setFont(QFont(treeInfo.family(),treeInfo.pointSize()-1,treeInfo.weight()));
+        }
     }
     else if (action->text()=="Увеличить"){
-        QFontInfo treeInfo = ui->radioTree->fontInfo();
+        QFontInfo treeInfo = ui->radioTreeMc->fontInfo();
         bool diameterChanged = false;
         for (auto radio: radioList){
             QFontInfo radioInfo = radio->fontInfo();
@@ -94,9 +99,13 @@ void MainWindow::performAction(QAction* action)
                                                         "height : "+QString::number(radioDiameter)+"px;"
                                                         "}");
             }
-
         }
-        if (treeInfo.pointSize() < 15) ui->radioTree->setFont(QFont(treeInfo.family(),treeInfo.pointSize()+1,treeInfo.weight()));
+        QList<QRadioButtonTree*> treeList;
+        treeList.append(ui->radioTreeBoard);
+        treeList.append(ui->radioTreeMc);
+        for(auto tree: treeList){
+            if (treeInfo.pointSize() < 15) tree->setFont(QFont(treeInfo.family(),treeInfo.pointSize()+1,treeInfo.weight()));
+        }
     }
 }
 
@@ -114,26 +123,26 @@ bool MainWindow::getConfig()
     file.close();
 
     QDomElement docElem = doc.documentElement();
-    mcAndFamilyList.clear();
     radioList.clear();
-    ui->radioTree->clear();
+    ui->radioTreeMc->clear();
+    ui->radioTreeBoard->clear();
+    QDomNode categoryXml = docElem.firstChild();
     QRadioButton* radio;
     bool isFirstRadio = true;
-    QList<QString> familyList;
-    QDomNode familyXml = docElem.firstChild();
+    QDomNode familyXml = categoryXml.firstChild();
+    QMap<QString, QString> mcMap;
     while(!familyXml.isNull()) {
         QDomElement e = familyXml.toElement();
         QString familyName = e.tagName();
-        familyList.append(familyName);
-        QTreeWidgetItem* newFamily = ui->radioTree->addItem(familyName);
+        QTreeWidgetItem* newFamily = ui->radioTreeMc->addItem(familyName);
         QDomNode mcXml = familyXml.firstChild();
         while(!mcXml.isNull()) {
             QDomElement i = mcXml.toElement();
             if(!i.isNull()) {
                 QString mcName = i.tagName();
-                mcAndFamilyList.append(std::pair<QString,QString>(mcName, familyName));
-                QTreeWidgetItem* newMc = ui->radioTree->addRadio(newFamily, mcName);
-                QWidget *widget = ui->radioTree->itemWidget(newMc, 0);
+                categoryMap.insert(categoryXml.toElement().tagName(), familyName);
+                QTreeWidgetItem* newMc = ui->radioTreeMc->addRadio(newFamily, mcName);
+                QWidget *widget = ui->radioTreeMc->itemWidget(newMc, 0);
                 radio = qobject_cast<QRadioButton*>(widget);
                 radio->setStyleSheet("QRadioButton::indicator"
                                                         "{"
@@ -150,6 +159,42 @@ bool MainWindow::getConfig()
             mcXml = mcXml.nextSibling();
         }
         familyXml = familyXml.nextSibling();
+    }
+
+    categoryXml = categoryXml.nextSibling();
+    if (!categoryXml.isNull()){
+        isFirstRadio = true;
+        familyXml = categoryXml.firstChild();
+        QMap<QString, QString> boardMap;
+        while(!familyXml.isNull()) {
+            QDomElement e = familyXml.toElement();
+            QString familyName = e.tagName();
+            QTreeWidgetItem* newFamily = ui->radioTreeBoard->addItem(familyName);
+            QDomNode mcXml = familyXml.firstChild();
+            while(!mcXml.isNull()) {
+                QDomElement i = mcXml.toElement();
+                if(!i.isNull()) {
+                    QString mcName = i.tagName();
+                    categoryMap.insert(categoryXml.toElement().tagName(), familyName);
+                    QTreeWidgetItem* newMc = ui->radioTreeBoard->addRadio(newFamily, mcName);
+                    QWidget *widget = ui->radioTreeBoard->itemWidget(newMc, 0);
+                    radio = qobject_cast<QRadioButton*>(widget);
+                    radio->setStyleSheet("QRadioButton::indicator"
+                                         "{"
+                                         "width : "+QString::number(radioDiameter)+"px;"
+                                                                            "height : "+QString::number(radioDiameter)+"px;"
+                                                                            "}");
+
+                    if(isFirstRadio == true) {
+                        radio->setChecked(true);
+                    }
+                    radioList.append(radio);
+                }
+                if(isFirstRadio) isFirstRadio = false;
+                mcXml = mcXml.nextSibling();
+            }
+            familyXml = familyXml.nextSibling();
+        }
     }
     return true;
 }
@@ -330,27 +375,47 @@ void MainWindow::createProject()
     int index = 1;
     QString mcName;
     QString familyName;
-    for (index; index<=radioList.count(); index++){
-        QRadioButton* radio = radioList.at(index-1);
-        if (radio->isChecked()){
-            mcName = radio->text();
-            for(auto pair: mcAndFamilyList){if(pair.first == mcName) {familyName = pair.second; break;}}
-            break;
+    QString categoryName;
+    if (ui->tabWidget->currentIndex()==0){
+        for( int i = 0; i < ui->radioTreeMc->topLevelItemCount(); ++i )
+        {
+            QTreeWidgetItem *item = ui->radioTreeMc->topLevelItem( i );
+            for( int j = 0; j < item->childCount(); ++j )
+            {
+                QWidget *widget = ui->radioTreeMc->itemWidget(item->child(j), 0);
+                QRadioButton* radio = qobject_cast<QRadioButton*>(widget);
+                if (radio->isChecked()) {mcName = radio->text(); familyName = item->text(0); categoryName = categoryMap.key(familyName); break; break;}
+            }
         }
     }
+    else{
+        for( int i = 0; i < ui->radioTreeBoard->topLevelItemCount(); ++i )
+        {
+            QTreeWidgetItem *item = ui->radioTreeBoard->topLevelItem( i );
+            for( int j = 0; j < item->childCount(); ++j )
+            {
+                QWidget *widget = ui->radioTreeBoard->itemWidget(item->child(j), 0);
+                QRadioButton* radio = qobject_cast<QRadioButton*>(widget);
+                if (radio->isChecked()) {mcName = radio->text(); familyName = item->text(0); categoryName = categoryMap.key(familyName); break; break;}
+            }
+        }
+    }
+    std::cout << qPrintable(categoryName + " " + familyName + "  " + mcName) << std::endl;
+
     QString confDir = QCoreApplication::applicationDirPath()+"/config.xml";
     QFile file(confDir);
     file.open(QIODevice::ReadOnly);
     QDomDocument doc("document");
     doc.setContent(&file);
     QDomElement docElem = doc.documentElement();
-    QDomElement familyXml = docElem.firstChildElement(familyName);
+    QDomElement categoryXml = docElem.firstChildElement(categoryName);
+    QDomElement familyXml = categoryXml.firstChildElement(familyName);
     QDomElement mcXml = familyXml.firstChildElement(mcName);
     QString HALUrl = mcXml.attribute("HAL");
     QString BSPUrl = familyXml.attribute("BSP");
-    QString freeRTOSUrl = docElem.attribute("freeRTOS");
-    QString vscodeUrl = docElem.attribute("vscode");
-    QString srcUrl = docElem.attribute("src");
+    QString freeRTOSUrl = categoryXml.attribute("freeRTOS");
+    QString vscodeUrl = categoryXml.attribute("vscode");
+    QString srcUrl = categoryXml.attribute("src");
     QString HALDirectory = directory + '/' + "src/hal";
     QString BSPDirectory = directory + '/' + "src/bsp";
     QString freeRTOSDirectory = directory + '/' + "src/FreeRTOS";
